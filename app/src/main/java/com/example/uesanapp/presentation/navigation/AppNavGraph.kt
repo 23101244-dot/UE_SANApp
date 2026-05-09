@@ -16,6 +16,12 @@ fun AppNavGraph(){
             startDestination = "register"){
         composable("register"){ RegisterScreen(navController) }
         composable("login"){ LoginScreen(navController) }
-        composable("home"){ HomeScreen() }
+        composable("home"){ HomeScreen()
+
+            DrawerScaffold(navController) {
+                HomeScreen()
+            }
+        }
+
     }
 }
