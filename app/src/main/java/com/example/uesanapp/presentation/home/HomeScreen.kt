@@ -12,15 +12,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.uesanapp.data.model.CountryModel
 
@@ -33,12 +34,10 @@ val mockCountries = listOf(
     CountryModel( name = "Argentina", ranking=1, imageUrl="https://flagcdn.com/w320/ar.png" ),
     CountryModel( name = "Japon", ranking=10, imageUrl="https://flagcdn.com/w320/jp.png" ),
     CountryModel( name = "Peru", ranking=50, imageUrl="https://flagcdn.com/w320/pe.png" )
-
-    )
-
+)
 
 @Composable
-fun HomeScreen(){
+fun HomeScreen(navController: NavHostController){
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -47,16 +46,21 @@ fun HomeScreen(){
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Bienvenido a la pantalla principal")
-        Spacer(modifier = Modifier.height(8.dp))
+        Text("Bienvenido a la pantalla principal", style = MaterialTheme.typography.headlineSmall)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = { navController.navigate("gallery") }) {
+            Text("Ir a Galería de Fotos")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         LazyColumn() {
             items(mockCountries){country->
                 Card(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(vertical = 16.dp)
-
+                        .padding(vertical = 8.dp)
                 ) {
                     Row(modifier = Modifier.padding(12.dp)) {
                         Image(
@@ -65,14 +69,12 @@ fun HomeScreen(){
                             contentScale = ContentScale.Crop,
                             painter = rememberAsyncImagePainter(country.imageUrl)
                         )
-                        Spacer(modifier = Modifier.height(9.dp))
+                        Spacer(modifier = Modifier.padding(8.dp))
                         Column {
-                            Text(country.name,style= MaterialTheme.typography.titleMedium)
-                            Text("Ranking FIFA 2026:${country.ranking}")
+                            Text(country.name, style = MaterialTheme.typography.titleMedium)
+                            Text("Ranking FIFA 2026: ${country.ranking}")
                         }
-
                     }
-
                 }
             }
         }
