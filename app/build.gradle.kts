@@ -4,6 +4,7 @@ plugins {
     id("com.google.gms.google-services")
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.android)
+
 }
 
 
@@ -64,17 +65,18 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    //Navigation Compose
+    // Navigation y Coil (esto está bien)
     implementation("androidx.navigation:navigation-compose:2.9.8")
-    //Coil Compose
     implementation("io.coil-kt:coil-compose:2.7.0")
-
     implementation("androidx.compose.material:material-icons-core:1.7.0")
 
-    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    // --- BLOQUE DE FIREBASE (ÚNICO Y CORRECTO) ---
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0")) // Usa la versión más alta
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
 
+    // --- BLOQUE DE ROOM (ESTÁ BIEN) ---
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")

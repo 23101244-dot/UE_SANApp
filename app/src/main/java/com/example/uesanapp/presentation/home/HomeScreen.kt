@@ -22,6 +22,8 @@ import com.example.uesanapp.data.model.AppDatabase
 import com.example.uesanapp.data.model.CountryEntity
 import com.example.uesanapp.data.model.CountryModel
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.auth.FirebaseAuth
+
 
 val mockCountries = listOf(
     CountryModel( name = "Colombia", ranking=5, imageUrl="https://flagcdn.com/w320/co.png" ),
@@ -38,6 +40,10 @@ val mockCountries = listOf(
 fun HomeScreen(navController: NavHostController){
     val context = LocalContext.current
     val firestore = remember { FirebaseFirestore.getInstance() }
+    val auth = remember { FirebaseAuth.getInstance() }
+
+    // Obtenemos el UID del usuario logueado
+    val uid = auth.currentUser?.uid ?: "invitado"
 
     val db = remember {
         Room.databaseBuilder(
@@ -58,7 +64,6 @@ fun HomeScreen(navController: NavHostController){
 
         LazyColumn {
             items(mockCountries) { country ->
-                // Verificamos si ya existe en Room al iniciar
                 val existsInRoom = remember { db.countryDao().getAllFavorites().any { it.name == country.name } }
                 var isFavorite by remember { mutableStateOf(existsInRoom) }
 
@@ -68,17 +73,13 @@ fun HomeScreen(navController: NavHostController){
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
+                        // ... (Imagen y textos se mantienen igual)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Image(
-                                contentDescription = country.name,
-                                modifier = Modifier.size(64.dp),
-                                contentScale = ContentScale.Crop,
-                                painter = rememberAsyncImagePainter(country.imageUrl)
-                            )
+                            Image(contentDescription = country.name, modifier = Modifier.size(64.dp), contentScale = ContentScale.Crop, painter = rememberAsyncImagePainter(country.imageUrl))
                             Spacer(modifier = Modifier.width(16.dp))
                             Column {
                                 Text(country.name, style = MaterialTheme.typography.titleMedium)
-                                Text("Ranking FIFA 2026: ${country.ranking}")
+                                Text("Ranking: ${country.ranking}")
                             }
                         }
 
@@ -87,15 +88,18 @@ fun HomeScreen(navController: NavHostController){
                             val entity = CountryEntity(country.name, country.ranking, country.imageUrl)
 
                             if (isFavorite) {
-                                // Guardar en ambos
                                 db.countryDao().insertFavorite(entity)
-                                firestore.collection("favoritos").document(country.name).set(country)
-                                Toast.makeText(context, "Guardado en local y nube", Toast.LENGTH_SHORT).show()
+                                // Guardado jerárquico: usuarios -> uid -> favoritos -> country
+                                firestore.collection("usuarios").document(uid)
+                                    .collection("favoritos").document(country.name)
+                                    .set(country)
+                                Toast.makeText(context, "Guardado en nube personal", Toast.LENGTH_SHORT).show()
                             } else {
-                                // Borrar en ambos
                                 db.countryDao().deleteFavorite(entity)
-                                firestore.collection("favoritos").document(country.name).delete()
-                                Toast.makeText(context, "Eliminado de local y nube", Toast.LENGTH_SHORT).show()
+                                firestore.collection("usuarios").document(uid)
+                                    .collection("favoritos").document(country.name)
+                                    .delete()
+                                Toast.makeText(context, "Eliminado de nube personal", Toast.LENGTH_SHORT).show()
                             }
                         }) {
                             Icon(

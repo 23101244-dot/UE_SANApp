@@ -9,13 +9,18 @@ import com.example.uesanapp.presentation.auth.RegisterScreen
 import com.example.uesanapp.presentation.home.HomeScreen
 import com.example.uesanapp.presentation.home.FavoritesScreen
 import com.example.uesanapp.presentation.permitions.GalleryPermissionsScrean
-
+import com.google.firebase.auth.FirebaseAuth // Importante: añade esta importación
 
 @Composable
 fun AppNavGraph(){
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "register"){
+    // Verificamos si ya hay un usuario logueado en el dispositivo
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    // Si hay usuario, vamos a "home", si no, a "register"
+    val startDestination = if (currentUser != null) "home" else "register"
+
+    NavHost(navController = navController, startDestination = startDestination){
 
         composable("register"){ RegisterScreen(navController) }
 

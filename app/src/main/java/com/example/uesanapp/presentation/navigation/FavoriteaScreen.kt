@@ -1,5 +1,6 @@
 package com.example.uesanapp.presentation.home
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,57 +13,60 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import androidx.room.Room
 import coil.compose.rememberAsyncImagePainter
-import com.example.uesanapp.data.model.AppDatabase
 import com.example.uesanapp.data.model.CountryEntity
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun FavoritesScreen(navController: NavHostController) {
     val context = LocalContext.current
+    val firestore = FirebaseFirestore.getInstance()
+    val auth = FirebaseAuth.getInstance()
+    val uid = auth.currentUser?.uid
 
-    // Conexión a la base de datos local
-    val db = remember {
-        Room.databaseBuilder(
-            context,
-            AppDatabase::class.java, "countries-db"
-        ).allowMainThreadQueries().build()
-    }
-
-    // Lista local que se llenará con los datos de Room
     var favoriteCountries by remember { mutableStateOf(listOf<CountryEntity>()) }
+    var isLoading by remember { mutableStateOf(true) }
 
-    // Traemos los datos de Room al abrir la pantalla
-    LaunchedEffect(Unit) {
-        favoriteCountries = db.countryDao().getAllFavorites()
+    LaunchedEffect(uid) {
+        if (uid != null) {
+            // Leemos la subcolección específica del usuario logueado
+            firestore.collection("usuarios")
+                .document(uid)
+                .collection("favoritos")
+                .get()
+                .addOnSuccessListener { documents ->
+                    val list = documents.map { doc ->
+                        CountryEntity(
+                            name = doc.getString("name") ?: "",
+                            ranking = (doc.getLong("ranking") ?: 0).toInt(),
+                            imageUrl = doc.getString("imageUrl") ?: ""
+                        )
+                    }
+                    favoriteCountries = list
+                    isLoading = false
+                }
+                .addOnFailureListener {
+                    Toast.makeText(context, "Error al cargar favoritos", Toast.LENGTH_SHORT).show()
+                    isLoading = false
+                }
+        } else {
+            isLoading = false
+        }
     }
 
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .fillMaxSize()
-            .statusBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Mis Favoritos (Room Local)", style = MaterialTheme.typography.titleLarge)
-        Spacer(modifier = Modifier.height(16.dp))
+    Column(modifier = Modifier.padding(16.dp).fillMaxSize().statusBarsPadding()) {
+        Text("Mis Favoritos (Nube)", style = MaterialTheme.typography.titleLarge)
 
-        if (favoriteCountries.isEmpty()) {
-            Text("Aún no tienes favoritos guardados localmente.")
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        } else if (favoriteCountries.isEmpty()) {
+            Text("No tienes favoritos guardados en la nube.")
         } else {
             LazyColumn {
                 items(favoriteCountries) { country ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(12.dp)
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                        Row(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
                             Image(
                                 contentDescription = country.name,
                                 modifier = Modifier.size(64.dp),

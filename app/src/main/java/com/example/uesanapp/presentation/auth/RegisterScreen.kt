@@ -1,90 +1,76 @@
 package com.example.uesanapp.presentation.auth
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import android.widget.Toast
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun RegisterScreen(navController: NavController){
-    var email by remember {mutableStateOf("")}
-    var name by remember {mutableStateOf("")}
-    var password by remember {mutableStateOf("")}
-    var confirmPassword by remember {mutableStateOf("")}
+    val context = LocalContext.current
+    val auth = remember { FirebaseAuth.getInstance() }
+
+    var email by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxSize()
-                    .statusBarsPadding(),
+            .padding(16.dp)
+            .fillMaxSize()
+            .statusBarsPadding(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
-
     ) {
-        Text("Registro de usuario",
-            style = MaterialTheme.typography.titleLarge)
+        Text("Registro de usuario", style = MaterialTheme.typography.titleLarge)
 
-        OutlinedTextField(
-            value = name,
-            onValueChange = {name = it},
-            label = { Text("Nombre")},
-            placeholder = { Text("Nombre")},
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = email,
-            onValueChange = {email = it},
-            label = { Text("Correo")},
-            placeholder = { Text("Correo")},
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = password,
-            onValueChange = {password = it},
-            label = { Text("Contraseña")},
-            placeholder = { Text("Contraseña")},
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = confirmPassword,
-            onValueChange = {confirmPassword = it},
-            label = { Text("Confirmar Contraseña")},
-            placeholder = { Text("Confirmar Contraseña")},
-            modifier = Modifier.fillMaxWidth()
-        )
+        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Correo") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Contraseña") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = confirmPassword, onValueChange = { confirmPassword = it }, label = { Text("Confirmar Contraseña") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick={
-                if(email.isNotBlank()
-                    && password.isNotBlank()
-                    && password == confirmPassword)
-                {
-                   navController.navigate("login")
+            onClick = {
+                if (password == confirmPassword && email.isNotBlank()) {
+                    isLoading = true
+                    auth.createUserWithEmailAndPassword(email, password)
+                        .addOnCompleteListener { task ->
+                            isLoading = false
+                            if (task.isSuccessful) {
+                                Toast.makeText(context, "Registro exitoso", Toast.LENGTH_SHORT).show()
+                                navController.navigate("home") {
+                                    popUpTo("register") { inclusive = true }
+                                }
+                            } else {
+                                Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                } else {
+                    Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
                 }
             },
-            modifier = Modifier.fillMaxWidth()
-        ){
-            Text("Registrar")
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
+        ) {
+            if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp))
+            else Text("Registrar")
         }
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextButton(onClick = { navController.navigate("login") }) {
+            Text("¿Ya tienes una cuenta? Inicia sesión")
+        }
     }
-
-
-
 }
