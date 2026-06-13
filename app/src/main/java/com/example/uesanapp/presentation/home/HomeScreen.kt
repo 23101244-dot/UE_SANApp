@@ -1,29 +1,27 @@
 package com.example.uesanapp.presentation.home
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.room.Room
 import coil.compose.rememberAsyncImagePainter
+import com.example.uesanapp.data.model.AppDatabase
+import com.example.uesanapp.data.model.CountryEntity
 import com.example.uesanapp.data.model.CountryModel
+import com.google.firebase.firestore.FirebaseFirestore
 
 val mockCountries = listOf(
     CountryModel( name = "Colombia", ranking=5, imageUrl="https://flagcdn.com/w320/co.png" ),
@@ -38,41 +36,73 @@ val mockCountries = listOf(
 
 @Composable
 fun HomeScreen(navController: NavHostController){
+    val context = LocalContext.current
+    val firestore = remember { FirebaseFirestore.getInstance() }
+
+    val db = remember {
+        Room.databaseBuilder(
+            context,
+            AppDatabase::class.java, "countries-db"
+        ).allowMainThreadQueries().build()
+    }
+
     Column(
         modifier = Modifier
             .padding(16.dp)
             .fillMaxSize()
             .statusBarsPadding(),
-        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Bienvenido a la pantalla principal", style = MaterialTheme.typography.headlineSmall)
+        Text("Ranking FIFA 2026", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { navController.navigate("gallery") }) {
-            Text("Ir a Galería de Fotos")
-        }
+        LazyColumn {
+            items(mockCountries) { country ->
+                // Verificamos si ya existe en Room al iniciar
+                val existsInRoom = remember { db.countryDao().getAllFavorites().any { it.name == country.name } }
+                var isFavorite by remember { mutableStateOf(existsInRoom) }
 
-        Spacer(modifier = Modifier.height(16.dp))
+                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                    Row(
+                        modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                contentDescription = country.name,
+                                modifier = Modifier.size(64.dp),
+                                contentScale = ContentScale.Crop,
+                                painter = rememberAsyncImagePainter(country.imageUrl)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(country.name, style = MaterialTheme.typography.titleMedium)
+                                Text("Ranking FIFA 2026: ${country.ranking}")
+                            }
+                        }
 
-        LazyColumn() {
-            items(mockCountries){country->
-                Card(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(vertical = 8.dp)
-                ) {
-                    Row(modifier = Modifier.padding(12.dp)) {
-                        Image(
-                            contentDescription = country.name,
-                            modifier = Modifier.size(64.dp),
-                            contentScale = ContentScale.Crop,
-                            painter = rememberAsyncImagePainter(country.imageUrl)
-                        )
-                        Spacer(modifier = Modifier.padding(8.dp))
-                        Column {
-                            Text(country.name, style = MaterialTheme.typography.titleMedium)
-                            Text("Ranking FIFA 2026: ${country.ranking}")
+                        IconButton(onClick = {
+                            isFavorite = !isFavorite
+                            val entity = CountryEntity(country.name, country.ranking, country.imageUrl)
+
+                            if (isFavorite) {
+                                // Guardar en ambos
+                                db.countryDao().insertFavorite(entity)
+                                firestore.collection("favoritos").document(country.name).set(country)
+                                Toast.makeText(context, "Guardado en local y nube", Toast.LENGTH_SHORT).show()
+                            } else {
+                                // Borrar en ambos
+                                db.countryDao().deleteFavorite(entity)
+                                firestore.collection("favoritos").document(country.name).delete()
+                                Toast.makeText(context, "Eliminado de local y nube", Toast.LENGTH_SHORT).show()
+                            }
+                        }) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Favorito",
+                                tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }

@@ -7,26 +7,35 @@ import androidx.navigation.compose.rememberNavController
 import com.example.uesanapp.presentation.auth.LoginScreen
 import com.example.uesanapp.presentation.auth.RegisterScreen
 import com.example.uesanapp.presentation.home.HomeScreen
+import com.example.uesanapp.presentation.home.FavoritesScreen
 import com.example.uesanapp.presentation.permitions.GalleryPermissionsScrean
 
-import com.example.uesanapp.presentation.navigation.DrawerScaffold
 
 @Composable
 fun AppNavGraph(){
     val navController = rememberNavController()
 
-    NavHost(navController = navController,
-            startDestination = "register"){
+    NavHost(navController = navController, startDestination = "register"){
+
         composable("register"){ RegisterScreen(navController) }
+
         composable("login"){ LoginScreen(navController) }
-        composable("gallery"){ 
+
+        composable("gallery"){
             DrawerScaffold(navController) {
                 GalleryPermissionsScrean()
             }
         }
-        composable("home"){ 
+
+        composable("home"){
             DrawerScaffold(navController) {
                 HomeScreen(navController)
+            }
+        }
+
+        composable("favorites"){
+            DrawerScaffold(navController) {
+                FavoritesScreen(navController)
             }
         }
     }
