@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "723377745360",
+    "project_id": "uesanapp-51e98",
+    "storage_bucket": "uesanapp-51e98.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:723377745360:android:922084776876d410b59dd5",
+        "android_client_info": {
+          "package_name": "com.example.uesanapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCOMBlrIr8WyxEhnkuOYRPMVqx02rq8MA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
